@@ -25,7 +25,7 @@ def confirm(question='OK to continue?'):
     """
     answer = ""
     while answer not in ["y", "n"]:
-        answer = input(question + ' [y/n] ').lower()
+        answer = input(f'{question} [y/n] ').lower()
     return answer == "y"
 
 
@@ -58,9 +58,9 @@ def torch_img_to_np_img(torch_img):
         torch_img {[type]} -- [description]
     '''
     assert isinstance(torch_img, torch.Tensor), f'cannot process data type: {type(torch_img)}'
-    if len(torch_img.shape) == 4 and (torch_img.shape[1] == 3 or torch_img.shape[1] == 1):
+    if len(torch_img.shape) == 4 and torch_img.shape[1] in [3, 1]:
         return np.transpose(torch_img.detach().cpu().numpy(), (0, 2, 3, 1))
-    if len(torch_img.shape) == 3 and (torch_img.shape[0] == 3 or torch_img.shape[0] == 1):
+    if len(torch_img.shape) == 3 and torch_img.shape[0] in [3, 1]:
         return np.transpose(torch_img.detach().cpu().numpy(), (1, 2, 0))
     elif len(torch_img.shape) == 2:
         return torch_img.detach().cpu().numpy()
@@ -76,9 +76,9 @@ def np_img_to_torch_img(np_img):
         np_img {[type]} -- [description]
     """
     assert isinstance(np_img, np.ndarray), f'cannot process data type: {type(np_img)}'
-    if len(np_img.shape) == 4 and (np_img.shape[3] == 3 or np_img.shape[3] == 1):
+    if len(np_img.shape) == 4 and np_img.shape[3] in [3, 1]:
         return torch.from_numpy(np.transpose(np_img, (0, 3, 1, 2)))
-    if len(np_img.shape) == 3 and (np_img.shape[2] == 3 or np_img.shape[2] == 1):
+    if len(np_img.shape) == 3 and np_img.shape[2] in [3, 1]:
         return torch.from_numpy(np.transpose(np_img, (2, 0, 1)))
     elif len(np_img.shape) == 2:
         return torch.from_numpy(np_img)
@@ -185,7 +185,7 @@ def visualize_SMPL_w_cameras(verts_list=None, caps=None, rays=None, samples=None
             other_pcds.append(temp)
     cam_frames = []
     if caps:
-        for i, cap in enumerate(caps):
+        for cap in caps:
             pts = np.array(cap.camera_poly(size))
             lns = [[0, 1], [0, 2], [0, 3], [0, 4], [1, 2], [2, 3], [3, 4], [4, 1]]
             line_set = o3d.geometry.LineSet()
@@ -233,14 +233,14 @@ def safe_load_weights(model, saved_weights):
         except RuntimeError:
             try:
                 weights = saved_weights
-                weights = {'module.' + k: v for k, v in weights.items()}
+                weights = {f'module.{k}': v for k, v in weights.items()}
                 model.load_state_dict(weights)
             except RuntimeError:
                 try:
                     pretrained_dict = saved_weights
                     model_dict = model.state_dict()
                     pretrained_dict = {k: v for k, v in pretrained_dict.items() if ((k in model_dict) and (model_dict[k].shape == pretrained_dict[k].shape))}
-                    assert len(pretrained_dict) != 0
+                    assert pretrained_dict
                     model_dict.update(pretrained_dict)
                     model.load_state_dict(model_dict)
                     non_match_keys = set(model.state_dict().keys()) - set(pretrained_dict.keys())
@@ -316,6 +316,6 @@ def move_smpls_to_torch(scene, device):
         if i == 0:
             scene.verts = temp
             scene.verts_cpu = temp_cpu
-        if i == 1:
+        elif i == 1:
             scene.Ts = temp
             scene.Ts_cpu = temp_cpu

@@ -122,10 +122,7 @@ class HumanRayDataset(data.Dataset):
             caps = [caps[0], caps[0]]
         else:
             raise ValueError('only support 1 patch')
-        if random.random() < self.opt.body_rays_ratio:
-            need_patch = True
-        else:
-            need_patch = False
+        need_patch = random.random() < self.opt.body_rays_ratio
         patch_counter = 0
         assert len(caps) == len(bins), f'{len(caps)} != {len(bins)}'
 
@@ -153,12 +150,15 @@ class HumanRayDataset(data.Dataset):
             for ray_key, num_rays in num_rays_dict.items():
                 if num_rays == 0:
                     continue
-                if ray_key == 'num_body_rays':
+                if ray_key == 'num_bkg_rays':
+                    coords = np.argwhere(cap.mask == 0)
+                    coords = coords[np.random.randint(0, len(coords), num_rays)][:, ::-1]  # could get duplicated rays
+                elif ray_key == 'num_body_rays':
                     coords = np.argwhere(cap.mask != 0)
+                    coords = coords[np.random.randint(0, len(coords), num_rays)][:, ::-1]  # could get duplicated rays
                 elif ray_key == 'num_border_rays':
                     coords = np.argwhere(cap.border_mask == 1)
-                elif ray_key == 'num_bkg_rays':
-                    coords = np.argwhere(cap.mask == 0)
+                    coords = coords[np.random.randint(0, len(coords), num_rays)][:, ::-1]  # could get duplicated rays
                 elif ray_key == 'num_patch_rays':
                     seed = random.choice(np.argwhere(cap.mask != 0))
                     seed = get_left_upper_corner(img, seed[::-1])[::-1]
@@ -176,13 +176,10 @@ class HumanRayDataset(data.Dataset):
                     #         ).astype(int)
                     # coords = np.stack([x, y], -1).reshape(-1, 2)
                     check = (img[seed[0]:bound[0], seed[1]:bound[1]] / 255).astype(np.float32)
+                    coords = coords[:, ::-1]
                 else:
                     raise ValueError
 
-                if ray_key == 'num_patch_rays':
-                    coords = coords[:, ::-1]
-                else:
-                    coords = coords[np.random.randint(0, len(coords), num_rays)][:, ::-1]  # could get duplicated rays
                 coords_list[cam_id].append(coords)
                 colors = (img[coords[:, 1], coords[:, 0]] / 255).astype(np.float32)
                 if ray_key == 'num_patch_rays':
@@ -221,28 +218,27 @@ class HumanRayDataset(data.Dataset):
         is_hit_list     = np.concatenate(is_hit_list)
         assert len(coords_list) == len(bins), f'{len(coords_list)} != {len(bins)}'
         assert colors_list.shape[0] == \
-               orig_list.shape[0] == \
-               dir_list.shape[0] == \
-               human_near_list.shape[0] == \
-               human_far_list.shape[0] == \
-               bkg_near_list.shape[0] == \
-               bkg_far_list.shape[0] == \
-               is_bkg_list.shape[0] == \
-               is_hit_list.shape[0] == \
-               self.batch_size
-        out = {
-            'color':         torch.from_numpy(colors_list).float(),
-            'origin':        torch.from_numpy(orig_list).float(),
-            'direction':     torch.from_numpy(dir_list).float(),
-            'human_near':    torch.from_numpy(human_near_list).float(),
-            'human_far':     torch.from_numpy(human_far_list).float(),
-            'bkg_near':      torch.from_numpy(bkg_near_list).float(),
-            'bkg_far':       torch.from_numpy(bkg_far_list).float(),
-            'is_bkg':        torch.from_numpy(is_bkg_list).long(),
-            'is_hit':        torch.from_numpy(is_hit_list).long(),
-            'cur_view_f':    cap.frame_id['frame_id'] / cap.frame_id['total_frames'],
-            'cur_view':      cap.frame_id['frame_id'],
-            'cap_id':        cap_id,
+                   orig_list.shape[0] == \
+                   dir_list.shape[0] == \
+                   human_near_list.shape[0] == \
+                   human_far_list.shape[0] == \
+                   bkg_near_list.shape[0] == \
+                   bkg_far_list.shape[0] == \
+                   is_bkg_list.shape[0] == \
+                   is_hit_list.shape[0] == \
+                   self.batch_size
+        return {
+            'color': torch.from_numpy(colors_list).float(),
+            'origin': torch.from_numpy(orig_list).float(),
+            'direction': torch.from_numpy(dir_list).float(),
+            'human_near': torch.from_numpy(human_near_list).float(),
+            'human_far': torch.from_numpy(human_far_list).float(),
+            'bkg_near': torch.from_numpy(bkg_near_list).float(),
+            'bkg_far': torch.from_numpy(bkg_far_list).float(),
+            'is_bkg': torch.from_numpy(is_bkg_list).long(),
+            'is_hit': torch.from_numpy(is_hit_list).long(),
+            'cur_view_f': cap.frame_id['frame_id'] / cap.frame_id['total_frames'],
+            'cur_view': cap.frame_id['frame_id'],
+            'cap_id': cap_id,
             'patch_counter': torch.tensor(patch_counter),
         }
-        return out

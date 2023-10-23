@@ -156,9 +156,7 @@ def render_vanilla(coarse_net, cap, fine_net=None, rays_per_batch=32768, samples
             total_depth_map.append(depth_map)
         total_rgb_map = torch.cat(total_rgb_map).reshape(*cap.shape, -1).detach().cpu().numpy()
         total_depth_map = torch.cat(total_depth_map).reshape(*cap.shape).detach().cpu().numpy()
-    if return_depth:
-        return total_rgb_map, total_depth_map
-    return total_rgb_map
+    return (total_rgb_map, total_depth_map) if return_depth else total_rgb_map
 
 
 def render_smpl_nerf(net, cap, posed_verts, faces, Ts, rays_per_batch=32768, samples_per_ray=64, white_bkg=True, render_can=False, geo_threshold=DEFAULT_GEO_THRESH, return_depth=False, return_mask=False, interval_comp=1.0):
@@ -197,10 +195,7 @@ def render_smpl_nerf(net, cap, posed_verts, faces, Ts, rays_per_batch=32768, sam
             acc_map = torch.zeros_like(origins[i:i + rays_per_batch, 0]).to(device)
             temp_near, temp_far = ray_utils.geometry_guided_near_far(origins[i:i + rays_per_batch], dirs[i:i + rays_per_batch], posed_verts, geo_threshold)
             if (temp_near >= temp_far).any():
-                if white_bkg:
-                    rgb_map[temp_near >= temp_far] = 1.0
-                else:
-                    rgb_map[temp_near >= temp_far] = 0.0
+                rgb_map[temp_near >= temp_far] = 1.0 if white_bkg else 0.0
                 depth_map[temp_near >= temp_far] = 0.0
                 acc_map[temp_near >= temp_far] = 0.0
             if (temp_near < temp_far).any():
@@ -241,9 +236,7 @@ def render_smpl_nerf(net, cap, posed_verts, faces, Ts, rays_per_batch=32768, sam
         return total_rgb_map, total_depth_map, total_acc_map
     if return_depth:
         return total_rgb_map, total_depth_map
-    if return_mask:
-        return total_rgb_map, total_acc_map
-    return total_rgb_map
+    return (total_rgb_map, total_acc_map) if return_mask else total_rgb_map
 
 
 def render_hybrid_nerf(net, cap, posed_verts, faces, Ts, rays_per_batch=32768, samples_per_ray=64, importance_samples_per_ray=128, white_bkg=True, geo_threshold=DEFAULT_GEO_THRESH, return_depth=False):
@@ -357,9 +350,7 @@ def render_hybrid_nerf(net, cap, posed_verts, faces, Ts, rays_per_batch=32768, s
         total_rgb_map = np.concatenate(total_rgb_map).reshape(*cap.shape, -1)
         total_depth_map = np.concatenate(total_depth_map).reshape(*cap.shape)
         total_acc_map = np.concatenate(total_acc_map).reshape(*cap.shape)
-    if return_depth:
-        return total_rgb_map, total_depth_map
-    return total_rgb_map
+    return (total_rgb_map, total_depth_map) if return_depth else total_rgb_map
 
 
 def render_hybrid_nerf_multi_persons(bkg_model, cap, human_models, posed_verts, faces, Ts, rays_per_batch=32768, samples_per_ray=64, importance_samples_per_ray=128, white_bkg=True, geo_threshold=DEFAULT_GEO_THRESH, return_depth=False):
@@ -381,6 +372,7 @@ def render_hybrid_nerf_multi_persons(bkg_model, cap, human_models, posed_verts, 
                 'far':       torch.from_numpy(far[..., None]).float().to(device)
             }
         return ray_batch
+
     with torch.set_grad_enabled(False):
         coords = np.argwhere(np.ones(cap.shape))[:, ::-1]
         origins, dirs = ray_utils.shot_rays(cap, coords)
@@ -456,9 +448,7 @@ def render_hybrid_nerf_multi_persons(bkg_model, cap, human_models, posed_verts, 
             total_depth_map.append(depth_map)
         total_rgb_map = torch.cat(total_rgb_map).reshape(*cap.shape, -1).detach().cpu().numpy()
         total_depth_map = torch.cat(total_depth_map).reshape(*cap.shape).detach().cpu().numpy()
-        if return_depth:
-            return total_rgb_map, total_depth_map
-        return total_rgb_map
+        return (total_rgb_map, total_depth_map) if return_depth else total_rgb_map
 
 
 def phong_renderer_from_pinhole_cam(cam, device='cpu'):
@@ -472,14 +462,12 @@ def phong_renderer_from_pinhole_cam(cam, device='cpu'):
         blur_radius=0.0,
         faces_per_pixel=1,
     )
-    silhouette_renderer = MeshRenderer(
+    return MeshRenderer(
         rasterizer=MeshRasterizer(
-            cameras=cameras,
-            raster_settings=raster_settings
+            cameras=cameras, raster_settings=raster_settings
         ),
-        shader=HardPhongShader(device=device, cameras=cameras, lights=lights)
+        shader=HardPhongShader(device=device, cameras=cameras, lights=lights),
     )
-    return silhouette_renderer
 
 
 def overlay_smpl(img, verts, faces, cap):

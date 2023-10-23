@@ -15,8 +15,7 @@ class Rotation():
         self.quaternion = quat
 
     def __str__(self):
-        string = f'quaternion: {self.quaternion}'
-        return string
+        return f'quaternion: {self.quaternion}'
 
     @classmethod
     def from_matrix(cls, mat):
@@ -73,8 +72,7 @@ class UnstableRotation():
         self._rotation_matrix = mat
 
     def __str__(self):
-        string = f'rotation_matrix: {self.rotation_matrix}'
-        return string
+        return f'rotation_matrix: {self.rotation_matrix}'
 
     @property
     def rotation_matrix(self):
@@ -86,8 +84,7 @@ class Translation():
         self.translation_vector = vec
 
     def __str__(self):
-        string = f'translation: {self.translation_vector}'
-        return string
+        return f'translation: {self.translation_vector}'
 
     @classmethod
     def from_matrix(cls, mat):

@@ -92,14 +92,12 @@ def silhouette_renderer_from_pinhole_cam(cam, device='cpu'):
         blur_radius=np.log(1. / 1e-4 - 1.) * blend_params.sigma,
         faces_per_pixel=100,
     )
-    silhouette_renderer = MeshRenderer(
+    return MeshRenderer(
         rasterizer=MeshRasterizer(
-            cameras=cameras,
-            raster_settings=raster_settings
+            cameras=cameras, raster_settings=raster_settings
         ),
-        shader=SoftSilhouetteShader(blend_params=blend_params)
+        shader=SoftSilhouetteShader(blend_params=blend_params),
     )
-    return silhouette_renderer
 
 
 def vertext_forward(pose, betas, align, body_model, scale):
@@ -225,7 +223,7 @@ def optimize_smpl(cap, smpl, faces, body_model, align, scale, num_iters=100):
     limits = clip_smpl_vals()
     limits = torch.from_numpy(limits).float().to(device)
 
-    for i in tqdm(range(num_iters), total=num_iters):
+    for _ in tqdm(range(num_iters), total=num_iters):
         optim.zero_grad()
         world_verts, world_joints = vertext_forward(pose, betas, align, body_model, scale)
         world_verts, world_joints = world_verts[0], world_joints[0]

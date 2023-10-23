@@ -16,11 +16,7 @@ def project_point_cloud_at_capture(point_cloud, capture, render_type='rgb'):
     else:
         point_cloud = point_cloud[:, :3]
         assert point_cloud.shape[1] == 3
-    if render_type in ['bw', 'rgb']:
-        keep_z = False
-    else:
-        keep_z = True
-
+    keep_z = render_type not in ['bw', 'rgb']
     pcd_2d = PointCloudProjectorNp.pcd_3d_to_pcd_2d(point_cloud,
                                                     capture.intrinsic_matrix,
                                                     capture.extrinsic_matrix,
@@ -32,11 +28,9 @@ def project_point_cloud_at_capture(point_cloud, capture, render_type='rgb'):
                                                     return_index=False)
     if render_type == 'pcd':
         return pcd_2d
-    reproj = PointCloudProjectorNp.pcd_2d_to_img(pcd_2d,
-                                                 capture.size,
-                                                 has_z=True,
-                                                 keep_z=keep_z)
-    return reproj
+    return PointCloudProjectorNp.pcd_2d_to_img(
+        pcd_2d, capture.size, has_z=True, keep_z=keep_z
+    )
 
 
 def pcd_3d_to_pcd_2d_torch(pcd, intrinsic, extrinsic, size, keep_z, crop: bool = True, filter_neg: bool = True, norm_coord: bool = True, return_index: bool = False, valid_mask=None):
@@ -72,9 +66,7 @@ def pcd_3d_to_pcd_2d_torch(pcd, intrinsic, extrinsic, size, keep_z, crop: bool =
     else:
         image_points = torch.cat([image_points, pcd[:, 3:, :]], dim=1)
     image_points = valid_mask[:, None, :].float() * image_points
-    if return_index:
-        return image_points, valid_mask
-    return image_points
+    return (image_points, valid_mask) if return_index else image_points
 
 
 class PointCloudProjectorNp():
@@ -149,8 +141,9 @@ class PointCloudProjectorNp():
             feat = img.reshape(-1, _c)
             feat = feat[valid_mask_1]
             xy = np.concatenate([xy, feat], axis=1)
-        pcd_3d = PointCloudProjectorNp.pcd_2d_to_pcd_3d(xy, z, intrinsic, cam2world=cam2world)
-        return pcd_3d
+        return PointCloudProjectorNp.pcd_2d_to_pcd_3d(
+            xy, z, intrinsic, cam2world=cam2world
+        )
 
     @staticmethod
     def pcd_3d_to_pcd_2d(pcd, intrinsic, extrinsic, size, keep_z, crop=True, filter_neg=True, norm_coord=True, return_index=False):
@@ -223,5 +216,4 @@ class PointCloudProjectorNp():
             )
         x, y = x.reshape(-1, 1), y.reshape(-1, 1)
         feat = img.reshape(-1, _c)
-        pcd_2d = np.concatenate([x, y, feat], axis=1)
-        return pcd_2d
+        return np.concatenate([x, y, feat], axis=1)

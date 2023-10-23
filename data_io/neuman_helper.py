@@ -33,16 +33,8 @@ class NeuManCapture(captures_module.RigRGBDPinholeCapture):
         else:
             self.captured_mono_depth = None
 
-        if keypoints_path is not None:
-            self.keypoints = np.load(keypoints_path)
-        else:
-            self.keypoints = None
-
-        if densepose_path is not None:
-            self.densepose = np.load(densepose_path)
-        else:
-            self.densepose = None
-
+        self.keypoints = None if keypoints_path is None else np.load(keypoints_path)
+        self.densepose = None if densepose_path is None else np.load(densepose_path)
         self._fused_depth_map = None
 
     def read_image_to_ram(self):
@@ -54,14 +46,15 @@ class NeuManCapture(captures_module.RigRGBDPinholeCapture):
     @property
     def mask(self):
         _mask = self.captured_mask.image.copy()
-        if _mask.max() == 255:
-            # Detectron2 mask
-            _mask[_mask == 255] = 1
-            _mask = 1 - _mask
-        else:
+        if _mask.max() != 255:
             raise ValueError
+        # Detectron2 mask
+        _mask[_mask == 255] = 1
+        _mask = 1 - _mask
         assert _mask.sum() > 0
-        assert _mask.shape[0:2] == self.pinhole_cam.shape, f'mask does not match with camera model: mask shape: {_mask.shape}, pinhole camera: {self.pinhole_cam}'
+        assert (
+            _mask.shape[:2] == self.pinhole_cam.shape
+        ), f'mask does not match with camera model: mask shape: {_mask.shape}, pinhole camera: {self.pinhole_cam}'
         return _mask
 
     @property
@@ -105,16 +98,10 @@ class ResizedNeuManCapture(captures_module.ResizedRigRGBDPinholeCapture):
             self.captured_mono_depth.dataset = 'mono'
         else:
             self.captured_mono_depth = None
-        if keypoints_path is not None:
-            # raise NotImplementedError
-            self.keypoints = None
-        else:
-            self.keypoints = None
-        if densepose_path is not None:
-            # raise NotImplementedError
-            self.densepose = None
-        else:
-            self.densepose = None
+        # raise NotImplementedError
+        self.keypoints = None
+        # raise NotImplementedError
+        self.densepose = None
 
     def read_image_to_ram(self):
         if self.captured_mono_depth is None:
@@ -125,14 +112,15 @@ class ResizedNeuManCapture(captures_module.ResizedRigRGBDPinholeCapture):
     @property
     def mask(self):
         _mask = self.captured_mask.image.copy()
-        if _mask.max() == 255:
-            # Detectron2 mask
-            _mask[_mask == 255] = 1
-            _mask = 1 - _mask
-        else:
+        if _mask.max() != 255:
             raise ValueError
+        # Detectron2 mask
+        _mask[_mask == 255] = 1
+        _mask = 1 - _mask
         assert _mask.sum() > 0
-        assert _mask.shape[0:2] == self.pinhole_cam.shape, f'mask does not match with camera model: mask shape: {_mask.shape}, pinhole camera: {self.pinhole_cam}'
+        assert (
+            _mask.shape[:2] == self.pinhole_cam.shape
+        ), f'mask does not match with camera model: mask shape: {_mask.shape}, pinhole camera: {self.pinhole_cam}'
         return _mask
 
     @property
@@ -159,16 +147,17 @@ def create_split_files(scene_dir):
     train_list = list(set(range(scene_length)) - set(val_list))
     test_list = val_list[:len(val_list) // 2]
     val_list = val_list[len(val_list) // 2:]
-    assert len(train_list) > 0
+    assert train_list
     assert len(test_list) > 0
     assert len(val_list) > 0
     splits = []
     for l, split in zip([train_list, val_list, test_list], ['train', 'val', 'test']):
-        output = []
         save_path = os.path.join(scene_dir, f'{split}_split.txt')
-        for i, cap in enumerate(dummy_scene.captures):
-            if i in l:
-                output.append(os.path.basename(cap.image_path))
+        output = [
+            os.path.basename(cap.image_path)
+            for i, cap in enumerate(dummy_scene.captures)
+            if i in l
+        ]
         with open(save_path, 'w') as f:
             for item in output:
                 f.write("%s\n" % item)
@@ -184,10 +173,10 @@ def read_text(txt_file):
     items = []
     with open(txt_file, "r") as fid:
         while True:
-            line = fid.readline()
-            if not line:
+            if line := fid.readline():
+                items.append(line.strip())
+            else:
                 break
-            items.append(line.strip())
     return items
 
 
@@ -348,19 +337,31 @@ class NeuManReader():
                 depth_path = raw_cap.image_path.replace('/images/', '/depth_maps/') + '.geometric.bin'
                 mono_depth_path = raw_cap.image_path.replace('/images/', '/mono_depth/')
                 if not os.path.isfile(depth_path):
-                    depth_path = raw_cap.image_path + 'dummy'
+                    depth_path = f'{raw_cap.image_path}dummy'
                     print(f'can not find mvs depth for {os.path.basename(raw_cap.image_path)}')
                 if not os.path.isfile(mono_depth_path):
-                    mono_depth_path = raw_cap.image_path + 'dummy'
+                    mono_depth_path = f'{raw_cap.image_path}dummy'
                     print(f'can not find mono depth for {os.path.basename(raw_cap.image_path)}')
-                mask_path = os.path.join(scene_dir, mask_dir, os.path.basename(raw_cap.image_path) + '.npy')
+                mask_path = os.path.join(
+                    scene_dir,
+                    mask_dir,
+                    f'{os.path.basename(raw_cap.image_path)}.npy',
+                )
                 if not os.path.isfile(mask_path):
                     mask_path = os.path.join(scene_dir, mask_dir, os.path.basename(raw_cap.image_path))
-                keypoints_path = os.path.join(scene_dir, keypoints_dir, os.path.basename(raw_cap.image_path) + '.npy')
+                keypoints_path = os.path.join(
+                    scene_dir,
+                    keypoints_dir,
+                    f'{os.path.basename(raw_cap.image_path)}.npy',
+                )
                 if not os.path.isfile(keypoints_path):
                     print(f'can not find keypoints for {os.path.basename(raw_cap.image_path)}')
                     keypoints_path = None
-                densepose_path = os.path.join(scene_dir, densepose_dir, 'dp_' + os.path.basename(raw_cap.image_path) + '.npy')
+                densepose_path = os.path.join(
+                    scene_dir,
+                    densepose_dir,
+                    f'dp_{os.path.basename(raw_cap.image_path)}.npy',
+                )
                 if not os.path.isfile(densepose_path):
                     print(f'can not find densepose for {os.path.basename(raw_cap.image_path)}')
                     densepose_path = None

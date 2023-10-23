@@ -42,13 +42,12 @@ class ImageFileScene(BaseScene):
         self._build_img_X_to_index_dict()
 
     def __getitem__(self, x):
-        if isinstance(x, str):
-            try:
-                return self.captures[self.img_path_to_index_dict[x]]
-            except:
-                return self.captures[self.fname_to_index_dict[x]]
-        else:
+        if not isinstance(x, str):
             return self.captures[x]
+        try:
+            return self.captures[self.img_path_to_index_dict[x]]
+        except:
+            return self.captures[self.fname_to_index_dict[x]]
 
     def _build_img_X_to_index_dict(self):
         assert (self.captures is not None) and (len(self.captures) > 0), 'there is no captures'
@@ -77,18 +76,12 @@ class RigCameraScene(ImageFileScene):
     def get_captures_by_view_id(self, view_id):
         assert view_id < self.num_views
         cap_index = self.view_id_to_index[view_id]
-        caps = []
-        for i in cap_index:
-            caps.append(self.captures[i])
-        return caps
+        return [self.captures[i] for i in cap_index]
 
     def get_captures_by_cam_id(self, cam_id):
         assert cam_id < self.num_cams
         cap_index = self.cam_id_to_index[cam_id]
-        caps = []
-        for i in cap_index:
-            caps.append(self.captures[i])
-        return caps
+        return [self.captures[i] for i in cap_index]
 
     def get_capture_by_view_cam_id(self, view_id, cam_id):
         assert view_id < self.num_views

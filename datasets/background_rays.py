@@ -104,20 +104,19 @@ class BackgroundRayDataset(data.Dataset):
         is_bkg_list = np.concatenate(is_bkg_list)
         viewf_list  = np.concatenate(viewf_list)
         assert colors_list.shape[0] == \
-               depths_list.shape[0] == \
-               orig_list.shape[0] == \
-               dir_list.shape[0] == \
-               near_list.shape[0] == \
-               far_list.shape[0] ==\
-               self.batch_size
-        out = {
-            'color':      torch.from_numpy(colors_list).float(),
-            'depth':      torch.from_numpy(depths_list).float(),
-            'origin':     torch.from_numpy(orig_list).float(),
-            'direction':  torch.from_numpy(dir_list).float(),
-            'near':       torch.from_numpy(near_list).float(),
-            'far':        torch.from_numpy(far_list).float(),
-            'is_bkg':     torch.from_numpy(is_bkg_list).long(),
+                   depths_list.shape[0] == \
+                   orig_list.shape[0] == \
+                   dir_list.shape[0] == \
+                   near_list.shape[0] == \
+                   far_list.shape[0] ==\
+                   self.batch_size
+        return {
+            'color': torch.from_numpy(colors_list).float(),
+            'depth': torch.from_numpy(depths_list).float(),
+            'origin': torch.from_numpy(orig_list).float(),
+            'direction': torch.from_numpy(dir_list).float(),
+            'near': torch.from_numpy(near_list).float(),
+            'far': torch.from_numpy(far_list).float(),
+            'is_bkg': torch.from_numpy(is_bkg_list).long(),
             'viewf_list': torch.from_numpy(viewf_list).float(),
         }
-        return out

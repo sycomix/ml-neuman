@@ -16,11 +16,12 @@ class TensorboardDatapack():
         self.HISTOGRAM_NAME = 'histogram'
         self.IMAGE_NAME = 'image'
         self.TEXT_NAME = 'text'
-        self.datapack = {}
-        self.datapack[self.SCALAR_NAME] = {}
-        self.datapack[self.HISTOGRAM_NAME] = {}
-        self.datapack[self.IMAGE_NAME] = {}
-        self.datapack[self.TEXT_NAME] = {}
+        self.datapack = {
+            self.SCALAR_NAME: {},
+            self.HISTOGRAM_NAME: {},
+            self.IMAGE_NAME: {},
+            self.TEXT_NAME: {},
+        }
 
     def set_training(self, training):
         self.training = training

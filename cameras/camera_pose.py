@@ -18,13 +18,12 @@ class CameraPose():
         Translation and rotation are world to camera
         '''
         assert isinstance(t, Translation)
-        assert isinstance(r, Rotation) or isinstance(r, UnstableRotation)
+        assert isinstance(r, (Rotation, UnstableRotation))
         self.t = t
         self.r = r
 
     def __str__(self):
-        string = f'translation: {self.t}, rotation: {self.r}'
-        return string
+        return f'translation: {self.t}, rotation: {self.r}'
 
     @classmethod
     def from_world_to_camera(cls, world_to_camera, unstable=False):

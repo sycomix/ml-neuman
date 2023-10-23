@@ -30,8 +30,7 @@ class ColmapAsciiReader():
         images_path = os.path.join(scene_dir, 'images.txt')
         captures = cls.read_captures(images_path, cameras_path, images_dir, tgt_size, order)
         point_cloud = cls.read_point_cloud(point_cloud_path)
-        scene = scene_module.ImageFileScene(captures, point_cloud)
-        return scene
+        return scene_module.ImageFileScene(captures, point_cloud)
 
     @staticmethod
     def read_point_cloud(points_txt_path):

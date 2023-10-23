@@ -47,8 +47,7 @@ class CapturedImage(CapturedContent):
         self.image_path = image_path
 
     def read_image(self):
-        img = imageio.imread(self.image_path)
-        return img
+        return imageio.imread(self.image_path)
 
     def read_image_to_ram(self):
         assert self._image is None
@@ -60,9 +59,8 @@ class CapturedImage(CapturedContent):
     def image(self):
         if self._image is not None:
             return self._image
-        else:
-            _image = self.read_image()
-            return _image
+        _image = self.read_image()
+        return _image
 
 
 class ResizedCapturedImage(CapturedImage):
@@ -75,10 +73,9 @@ class ResizedCapturedImage(CapturedImage):
     def image(self):
         if self._image is not None:
             return self._image
-        else:
-            _image = self.read_image()
-            _image = np.array(Image.fromarray(_image).resize(self.tgt_size[::-1], self.sampling))
-            return _image
+        _image = self.read_image()
+        _image = np.array(Image.fromarray(_image).resize(self.tgt_size[::-1], self.sampling))
+        return _image
 
 
 class CapturedDepth(CapturedContent):
@@ -129,9 +126,8 @@ class CapturedDepth(CapturedContent):
     def depth_map(self):
         if self._depth is not None:
             return self._depth
-        else:
-            _depth = self.read_depth()
-            return _depth
+        _depth = self.read_depth()
+        return _depth
 
 
 class ResizedCapturedDepth(CapturedDepth):
@@ -144,7 +140,6 @@ class ResizedCapturedDepth(CapturedDepth):
     def depth_map(self):
         if self._depth is not None:
             return self._depth
-        else:
-            _depth = self.read_depth()
-            _depth = np.array(Image.fromarray(_depth).resize(self.tgt_size[::-1], self.sampling))
-            return _depth
+        _depth = self.read_depth()
+        _depth = np.array(Image.fromarray(_depth).resize(self.tgt_size[::-1], self.sampling))
+        return _depth

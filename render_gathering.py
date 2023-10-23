@@ -35,10 +35,10 @@ ACTOR_WEIGHTS_DICT = {
 def read_novel_caps(opt, num_caps, scene):
     novel_caps = []
     if os.path.basename(opt.scene_dir) == 'seattle' and opt.motion_name == 'dance_together':
+        ellipse_a = 0.15
+        ellipse_b = 0.05
         for i in range(num_caps):
             cap = copy.deepcopy(scene.captures[20])
-            ellipse_a = 0.15
-            ellipse_b = 0.05
             x_offset = cap.cam_pose.right * ellipse_a * np.cos((i/num_caps) * (4*np.pi))
             y_offset = cap.cam_pose.up * ellipse_b * np.sin((i/num_caps) * (4*np.pi))
             cap.cam_pose.camera_center_in_world = cap.cam_pose.camera_center_in_world + x_offset + y_offset
@@ -88,7 +88,10 @@ def read_actor(opt, actor_name):
     poses[:, 66:] = 0
     trans = motions['trans'][start_idx:end_idx:skip]
     # read smpl betas from original source
-    smpl_path = os.path.join(os.path.join(os.path.dirname(opt.scene_dir), actor_name), f'smpl_output_optimized.pkl')
+    smpl_path = os.path.join(
+        os.path.join(os.path.dirname(opt.scene_dir), actor_name),
+        'smpl_output_optimized.pkl',
+    )
     raw_smpl = joblib.load(smpl_path)
     raw_smpl = raw_smpl[list(raw_smpl.keys())[0]]
     beta = np.array(raw_smpl['betas']).mean(0)
@@ -171,9 +174,12 @@ def main(opt):
         smpl_type='optimized'
     )
     if opt.geo_threshold < 0:
-        bones = []
-        for i in range(len(scene.captures)):
-            bones.append(np.linalg.norm(scene.smpls[i]['joints_3d'][3] - scene.smpls[i]['joints_3d'][0]))
+        bones = [
+            np.linalg.norm(
+                scene.smpls[i]['joints_3d'][3] - scene.smpls[i]['joints_3d'][0]
+            )
+            for i in range(len(scene.captures))
+        ]
         opt.geo_threshold = np.mean(bones)
 
     # read all_actors

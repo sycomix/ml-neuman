@@ -21,7 +21,9 @@ class HumanNeRF(nn.Module):
     def __init__(self, opt, poses=None, betas=None, alignments=None, scale=None):
         super().__init__()
         self.coarse_bkg_net, self.fine_bkg_net = vanilla.build_nerf(opt)
-        self.offset_nets = nn.ModuleList([vanilla.build_offset_net(opt) for i in range(opt.num_offset_nets)])
+        self.offset_nets = nn.ModuleList(
+            [vanilla.build_offset_net(opt) for _ in range(opt.num_offset_nets)]
+        )
         # canonical space always use 0 as minimum frequency
         temp_opt = copy.deepcopy(opt)
         temp_opt.pos_min_freq = 0
@@ -63,10 +65,13 @@ class HumanNeRF(nn.Module):
         try:
             pretrained_can = os.path.join(opt.out_dir, opt.load_can, 'checkpoint.pth.tar')
             can_weights = torch.load(pretrained_can, map_location='cpu')
-            _can_weights = {}
-            for k in can_weights['hybrid_model_state_dict'].keys():
-                if 'coarse_human_net.' in k:
-                    _can_weights[k.split('coarse_human_net.', 1)[1]] = can_weights['hybrid_model_state_dict'][k]
+            _can_weights = {
+                k.split('coarse_human_net.', 1)[1]: can_weights[
+                    'hybrid_model_state_dict'
+                ][k]
+                for k in can_weights['hybrid_model_state_dict'].keys()
+                if 'coarse_human_net.' in k
+            }
             utils.safe_load_weights(self.coarse_human_net, _can_weights)
             print(f'pretrained canonical human model loaded from {pretrained_can}')
         except Exception as e:

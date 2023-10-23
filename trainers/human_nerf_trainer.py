@@ -282,11 +282,13 @@ class HumanNeRFTrainer():
         dummy_dirs = torch.randn(dirs.shape, dtype=dirs.dtype, device=device)
         dummy_dirs = dummy_dirs / torch.norm(dummy_dirs, dim=-1, keepdim=True)
         dummy_out = self.net.coarse_human_net(pts, dummy_dirs)
-        color_reg = F.mse_loss(
-            torch.sigmoid(dummy_out.reshape(-1, 4))[:, :3],
-            torch.sigmoid(tgts.reshape(-1, 4))[:, :3]
-        ) * self.penalize_color_range
-        return color_reg
+        return (
+            F.mse_loss(
+                torch.sigmoid(dummy_out.reshape(-1, 4))[:, :3],
+                torch.sigmoid(tgts.reshape(-1, 4))[:, :3],
+            )
+            * self.penalize_color_range
+        )
 
     def _smpl_symmetry_regularization(self, pts, dirs, tgts):
         '''
@@ -296,11 +298,13 @@ class HumanNeRFTrainer():
         pts_flip = pts.clone().detach()
         pts_flip[..., 0] *= -1
         out_flip = self.net.coarse_human_net(pts_flip, dirs.clone().detach())
-        sym_reg = F.mse_loss(
-            torch.tanh(torch.relu(tgts[..., 3])),
-            torch.tanh(torch.relu(out_flip[..., 3]))
-        ) * self.penalize_symmetric_alpha
-        return sym_reg
+        return (
+            F.mse_loss(
+                torch.tanh(torch.relu(tgts[..., 3])),
+                torch.tanh(torch.relu(out_flip[..., 3])),
+            )
+            * self.penalize_symmetric_alpha
+        )
 
     def _smpl_shape_regularization(self, batch, pts, dirs, pred):
         device = pts.device
@@ -440,10 +444,7 @@ class HumanNeRFTrainer():
             self.net.offset_nets.apply(weight_reset)
             self.net.coarse_human_net.apply(weight_reset)
             loss_dict = {l: torch.tensor(0.0, requires_grad=True).float().to(device) for l in LOSS_NAMES}
-        if return_rgb:
-            return loss_dict, fine_rgb_map
-        else:
-            return loss_dict
+        return (loss_dict, fine_rgb_map) if return_rgb else loss_dict
 
     def validate_batch(self, batch):
         self.optim.zero_grad()
@@ -532,9 +533,7 @@ class HumanNeRFTrainer():
         tb_datapack.set_iteration(self.iteration)
         for key in validation_data.keys():
             if 'loss' in key or 'reg' in key:
-                if key == 'lpips_loss' and validation_data[key] == 0:
-                    pass
-                else:
+                if key != 'lpips_loss' or validation_data[key] != 0:
                     tb_datapack.add_scalar({f'val_loss/{key}': validation_data[key]})
         tb_datapack.add_image({'render/val': render})
         self.tb_pusher.push_to_tensorboard(tb_datapack)
@@ -634,9 +633,7 @@ class HumanNeRFTrainer():
         tb_datapack.set_iteration(self.iteration)
         for key in losses.keys():
             if 'loss' in key or 'reg' in key:
-                if key == 'lpips_loss' and losses[key] == 0:
-                    pass
-                else:
+                if key != 'lpips_loss' or losses[key] != 0:
                     tb_datapack.add_scalar({f'train_loss/{key}': losses[key]})
         tb_datapack.add_scalar({'lr/lr': lr})
         tb_datapack.add_scalar({'hyper_params/offset_scale': self.net.offset_nets[0].nerf.scale})

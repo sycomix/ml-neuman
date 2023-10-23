@@ -24,8 +24,7 @@ class BasePinholeCapture():
         self.pinhole_cam = pinhole_cam
 
     def __str__(self):
-        string = f'pinhole camera: {self.pinhole_cam}\ncamera pose: {self.cam_pose}'
-        return string
+        return f'pinhole camera: {self.pinhole_cam}\ncamera pose: {self.cam_pose}'
 
     @property
     def mvp_mat(self):
@@ -70,8 +69,7 @@ class RigPinholeCapture(BasePinholeCapture):
         self.cam_id = cam_id
 
     def __str__(self):
-        string = f'{super().__str__()}\nview id: {self.view_id}, camera id: {self.cam_id}'
-        return string
+        return f'{super().__str__()}\nview id: {self.view_id}, camera id: {self.cam_id}'
 
 
 class ResizedPinholeCapture(BasePinholeCapture):
@@ -103,8 +101,12 @@ class DepthPinholeCapture(BasePinholeCapture):
         return self.get_point_cloud_world_from_depth(feat_map=None)
 
     def get_point_cloud_world_from_depth(self, feat_map=None):
-        _pcd = pcd_projector.PointCloudProjectorNp.img_to_pcd_3d(self.depth_map, self.pinhole_cam.intrinsic_matrix, img=feat_map, cam2world=self.cam_pose.camera_to_world).astype(np.float32)
-        return _pcd
+        return pcd_projector.PointCloudProjectorNp.img_to_pcd_3d(
+            self.depth_map,
+            self.pinhole_cam.intrinsic_matrix,
+            img=feat_map,
+            cam2world=self.cam_pose.camera_to_world,
+        ).astype(np.float32)
 
 
 class RGBPinholeCapture(BasePinholeCapture):
@@ -122,7 +124,9 @@ class RGBPinholeCapture(BasePinholeCapture):
     @property
     def image(self):
         _image = self.captured_image.image
-        assert _image.shape[0:2] == self.pinhole_cam.shape, f'image does not match with camera model: image shape: {_image.shape}, pinhole camera: {self.pinhole_cam}'
+        assert (
+            _image.shape[:2] == self.pinhole_cam.shape
+        ), f'image does not match with camera model: image shape: {_image.shape}, pinhole camera: {self.pinhole_cam}'
         return _image
 
 

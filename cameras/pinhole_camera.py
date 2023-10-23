@@ -20,8 +20,7 @@ class PinholeCamera():
         self.cy = cy
 
     def __str__(self):
-        string = f'width: {self.width}, height: {self.height}, fx: {self.fx}, fy: {self.fy}, cx: {self.cx}, cy: {self.cy}'
-        return string
+        return f'width: {self.width}, height: {self.height}, fx: {self.fx}, fy: {self.fy}, cx: {self.cx}, cy: {self.cy}'
 
     @classmethod
     def from_intrinsic(cls, width, height, mat):
@@ -41,10 +40,9 @@ class PinholeCamera():
 
     @property
     def intrinsic_matrix(self):
-        mat = np.array([[self.fx,  0.0,     self.cx],
-                        [0.0,      self.fy, self.cy],
-                        [0.0,      0.0,     1.0]])
-        return mat
+        return np.array(
+            [[self.fx, 0.0, self.cx], [0.0, self.fy, self.cy], [0.0, 0.0, 1.0]]
+        )
 
 
 def resize_pinhole_camera(pinhole_cam, tgt_size):
@@ -53,5 +51,4 @@ def resize_pinhole_camera(pinhole_cam, tgt_size):
     scale_w = _w / pinhole_cam.shape[1]
     _cx, _cy = pinhole_cam.cx * scale_w, pinhole_cam.cy * scale_h
     _fx, _fy = pinhole_cam.fx * scale_w, pinhole_cam.fy * scale_h
-    cropped_pinhole_cam = PinholeCamera(_w, _h, _fx, _fy, _cx, _cy)
-    return cropped_pinhole_cam
+    return PinholeCamera(_w, _h, _fx, _fy, _cx, _cy)

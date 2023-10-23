@@ -11,15 +11,14 @@ from utils import utils
 
 
 def str2bool(v: str):
-    return v.lower() in ('true', '1', 'yes', 'y', 't')
+    return v.lower() in {'true', '1', 'yes', 'y', 't'}
 
 
 def print_opt(opt):
-    content_list = []
-    args = list(vars(opt))
-    args.sort()
-    for arg in args:
-        content_list += [arg.rjust(25, ' ') + '  ' + str(getattr(opt, arg))]
+    args = sorted(vars(opt))
+    content_list = [
+        arg.rjust(25, ' ') + '  ' + str(getattr(opt, arg)) for arg in args
+    ]
     utils.print_notification(content_list, 'OPTIONS')
 
 
@@ -27,8 +26,7 @@ def opt_to_string(opt):
     string = '\n\n'
     string += 'python ' + ' '.join(sys.argv)
     string += '\n\n'
-    args = list(vars(opt))
-    args.sort()
+    args = sorted(vars(opt))
     for arg in args:
         string += arg.rjust(25, ' ') + '  ' + str(getattr(opt, arg)) + '\n\n'
     return string

@@ -27,8 +27,7 @@ from geometry import transformations
 
 
 def read_vibe_estimates(vibe_output_path):
-    vibe_estimates = joblib.load(vibe_output_path)[1]
-    return vibe_estimates
+    return joblib.load(vibe_output_path)[1]
 
 
 def dump_romp_estimates(romp_output_dir, dump_path, scene=None):
@@ -58,9 +57,7 @@ def dump_romp_estimates(romp_output_dir, dump_path, scene=None):
     for k, v in vibe_estimates.items():
         vibe_estimates[k] = np.array(v).astype(np.float32)
 
-    vibe_results = {}
-    vibe_results[1] = vibe_estimates
-
+    vibe_results = {1: vibe_estimates}
     joblib.dump(vibe_results, dump_path)
     print(f'dumped ROMP results to pkl at {dump_path}')
 
@@ -86,7 +83,7 @@ def solve_translation(p3d, p2d, mvp):
     optim = torch.optim.Adam(optim_list)
 
     total_iters = 1000
-    for i in tqdm(range(total_iters), total=total_iters):
+    for _ in tqdm(range(total_iters), total=total_iters):
         xyzw = torch.cat([p3d[:, 0:3] + translation, torch.ones_like(p3d[:, 0:1])], axis=1)
         camera_points = torch.matmul(mvp, xyzw.T).T
         image_points = camera_points / camera_points[:, 2:3]

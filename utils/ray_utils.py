@@ -189,9 +189,7 @@ def sample_pdf(bins, weights, N_samples, det=False, device='cpu'):
     denom = (cdf_g[..., 1]-cdf_g[..., 0])
     denom = torch.where(denom < 1e-5, torch.ones_like(denom), denom)
     t = (u-cdf_g[..., 0])/denom
-    samples = bins_g[..., 0] + t * (bins_g[..., 1]-bins_g[..., 0])
-
-    return samples
+    return bins_g[..., 0] + t * (bins_g[..., 1]-bins_g[..., 0])
 
 
 def geometry_guided_near_far(orig, dir, vert, geo_threshold):

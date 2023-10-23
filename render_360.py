@@ -91,9 +91,12 @@ def main_posed_360(opt):
         smpl_type='optimized'
     )
     if opt.geo_threshold < 0:
-        bones = []
-        for i in range(len(scene.captures)):
-            bones.append(np.linalg.norm(scene.smpls[i]['joints_3d'][3] - scene.smpls[i]['joints_3d'][0]))
+        bones = [
+            np.linalg.norm(
+                scene.smpls[i]['joints_3d'][3] - scene.smpls[i]['joints_3d'][0]
+            )
+            for i in range(len(scene.captures))
+        ]
         opt.geo_threshold = np.mean(bones)
     net = human_nerf.HumanNeRF(opt)
     weights = torch.load(opt.weights_path, map_location='cpu')
